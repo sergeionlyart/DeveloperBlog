@@ -165,6 +165,11 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
     
+    <!-- Дополнительные CSS-патчи для админ-панели -->
+    {% if request.path.startswith('/admin') %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-patches.css') }}">
+    {% endif %}
+    
     <!-- Markdown editor styles temporarily disabled -->
     {# 
     {% if request.path.startswith('/admin/article') %}

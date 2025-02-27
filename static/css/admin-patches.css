@@ -1,0 +1,48 @@
+/* 
+ * Патчи и оптимизации CSS для административной панели
+ * Эти правила помогают улучшить производительность и стабильность
+ */
+
+/* Предотвращаем анимации и эффекты, которые могут вызывать зависания */
+* {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Оптимизируем отображение длинных форм */
+form.article-form {
+  max-height: 90vh;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+/* Улучшаем читаемость полей формы */
+.form-control {
+  max-height: 500px;
+}
+
+/* Ограничиваем размер текстовых полей для предотвращения проблем с производительностью */
+textarea.form-control {
+  max-height: 400px;
+}
+
+/* Улучшаем отзывчивость кнопок для предотвращения проблем с зависанием при нажатии */
+.btn {
+  transition: background-color 0s !important;
+}
+
+/* Улучшаем отображение таблиц с большим количеством данных */
+.table-responsive {
+  overflow-x: auto;
+}
+
+/* Предотвращаем зависания на мобильных устройствах */
+@media (max-width: 767px) {
+  .table-responsive {
+    border: none;
+  }
+  
+  .table td, .table th {
+    white-space: normal;
+  }
+}
