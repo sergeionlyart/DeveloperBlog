@@ -38,6 +38,7 @@ def article(slug):
     article = Article.query.filter_by(slug=slug, published=True).first_or_404()
     return render_template('article.html', 
                           article=article,
+                          Article=Article,
                           title=article.meta_title or article.title,
                           description=article.meta_description or article.summary)
 
