@@ -1,0 +1,31 @@
+{% if breadcrumbs %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        {% for text, url in breadcrumbs %}
+            {% if not loop.last %}
+                <li class="breadcrumb-item"><a href="{{ url }}">{{ text }}</a></li>
+            {% else %}
+                <li class="breadcrumb-item active" aria-current="page">{{ text }}</li>
+            {% endif %}
+        {% endfor %}
+    </ol>
+</nav>
+
+<!-- Structured data breadcrumbs for SEO -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {% for text, url in breadcrumbs %}
+        {
+            "@type": "ListItem",
+            "position": {{ loop.index }},
+            "name": "{{ text }}",
+            "item": "{{ request.url_root.rstrip('/') }}{{ url }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ]
+}
+</script>
+{% endif %}
