@@ -43,10 +43,12 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
     
-    <!-- Load SimpleMDE styles only on article edit pages -->
+    <!-- Markdown editor styles temporarily disabled -->
+    {# 
     {% if request.path.startswith('/admin/article') %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
     {% endif %}
+    #}
 </head>
 <body>
     <!-- Navigation -->
@@ -198,10 +200,12 @@
     {% if request.path.startswith('/admin') %}
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
     
-    <!-- Add SimpleMDE only on article edit pages -->
+    <!-- SimpleMDE temporarily disabled -->
+    {# 
     {% if request.path.startswith('/admin/article') %}
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     {% endif %}
+    #}
     {% endif %}
 </body>
 </html>

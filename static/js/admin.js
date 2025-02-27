@@ -1,7 +1,9 @@
 // Admin page JavaScript functionality
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Initialize SimpleMDE if we're on the edit article page
+  console.log("Admin JS loaded successfully");
+  
+  /* SimpleMDE initialization temporarily disabled
   const contentTextarea = document.getElementById('content');
   if (contentTextarea) {
     const simplemde = new SimpleMDE({ 
@@ -22,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+  */
 
   // Auto-generate slug from title
   const titleInput = document.getElementById('title');

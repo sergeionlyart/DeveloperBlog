@@ -148,75 +148,98 @@ def admin_articles():
 @login_required
 @admin_required
 def new_article():
-    categories = Category.query.all()
-    tags = Tag.query.all()
+    import logging
+    logging.info("Starting new_article route")
     
-    if request.method == 'POST':
-        title = request.form.get('title')
-        content = request.form.get('content')
-        category_id = request.form.get('category_id')
-        tag_ids = request.form.getlist('tags')
-        published = 'published' in request.form
-        summary = request.form.get('summary', '')
+    try:
+        logging.info("Fetching categories and tags")
+        categories = Category.query.all()
+        tags = Tag.query.all()
         
-        # Get or create slug
-        slug = request.form.get('slug', '')
-        if not slug:
-            from slugify import slugify
-            slug = slugify(title)
+        if request.method == 'POST':
+            logging.info("Processing POST request for new article")
+            title = request.form.get('title')
+            content = request.form.get('content')
+            category_id = request.form.get('category_id')
+            tag_ids = request.form.getlist('tags')
+            published = 'published' in request.form
+            summary = request.form.get('summary', '')
+            
+            logging.info(f"Article data received - Title: {title}, Category ID: {category_id}")
+            
+            # Get or create slug
+            slug = request.form.get('slug', '')
+            if not slug:
+                from slugify import slugify
+                slug = slugify(title)
+                logging.info(f"Generated slug: {slug}")
+            
+            # Meta info
+            meta_title = request.form.get('meta_title', title)
+            meta_description = request.form.get('meta_description', summary)
+            meta_keywords = request.form.get('meta_keywords', '')
+            
+            logging.info("Creating new article object")
+            # Create new article
+            article = Article(
+                title=title,
+                slug=slug,
+                content=content,
+                summary=summary,
+                published=published,
+                user_id=current_user.id,
+                category_id=category_id if category_id else None,
+                meta_title=meta_title,
+                meta_description=meta_description,
+                meta_keywords=meta_keywords
+            )
+            
+            # Add tags
+            if tag_ids:
+                logging.info(f"Processing selected tags: {tag_ids}")
+                selected_tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
+                article.tags = selected_tags
+            
+            logging.info("Adding article to session")
+            db.session.add(article)
+            
+            # Create new tags if specified
+            new_tags = request.form.get('new_tags', '')
+            if new_tags:
+                logging.info(f"Processing new tags: {new_tags}")
+                tag_names = [t.strip() for t in new_tags.split(',') if t.strip()]
+                for tag_name in tag_names:
+                    tag = Tag.query.filter_by(name=tag_name).first()
+                    if not tag:
+                        logging.info(f"Creating new tag: {tag_name}")
+                        tag = Tag(name=tag_name)
+                        db.session.add(tag)
+                    article.tags.append(tag)
+            
+            try:
+                logging.info("Committing to database")
+                db.session.commit()
+                logging.info("Clearing cache")
+                cache.clear()  # Clear cache to reflect new content
+                logging.info("Regenerating sitemap")
+                generate_sitemap()  # Regenerate sitemap
+                flash('Article created successfully!', 'success')
+                return redirect(url_for('article', slug=article.slug))
+            except Exception as e:
+                logging.error(f"Error committing to database: {str(e)}")
+                db.session.rollback()
+                flash(f'Error creating article: {str(e)}', 'danger')
         
-        # Meta info
-        meta_title = request.form.get('meta_title', title)
-        meta_description = request.form.get('meta_description', summary)
-        meta_keywords = request.form.get('meta_keywords', '')
-        
-        # Create new article
-        article = Article(
-            title=title,
-            slug=slug,
-            content=content,
-            summary=summary,
-            published=published,
-            user_id=current_user.id,
-            category_id=category_id if category_id else None,
-            meta_title=meta_title,
-            meta_description=meta_description,
-            meta_keywords=meta_keywords
-        )
-        
-        # Add tags
-        if tag_ids:
-            selected_tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
-            article.tags = selected_tags
-        
-        db.session.add(article)
-        
-        # Create new tags if specified
-        new_tags = request.form.get('new_tags', '')
-        if new_tags:
-            tag_names = [t.strip() for t in new_tags.split(',') if t.strip()]
-            for tag_name in tag_names:
-                tag = Tag.query.filter_by(name=tag_name).first()
-                if not tag:
-                    tag = Tag(name=tag_name)
-                    db.session.add(tag)
-                article.tags.append(tag)
-        
-        try:
-            db.session.commit()
-            cache.clear()  # Clear cache to reflect new content
-            generate_sitemap()  # Regenerate sitemap
-            flash('Article created successfully!', 'success')
-            return redirect(url_for('article', slug=article.slug))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error creating article: {str(e)}', 'danger')
-    
-    return render_template('admin/edit_article.html',
-                          categories=categories,
-                          tags=tags,
-                          is_edit=False,
-                          title="New Article")
+        logging.info("Rendering edit_article template for GET request")
+        return render_template('admin/edit_article.html',
+                            categories=categories,
+                            tags=tags,
+                            is_edit=False,
+                            title="New Article")
+    except Exception as e:
+        logging.error(f"Unexpected error in new_article route: {str(e)}")
+        flash(f'An unexpected error occurred: {str(e)}', 'danger')
+        return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/article/edit/<int:article_id>', methods=['GET', 'POST'])
 @login_required
