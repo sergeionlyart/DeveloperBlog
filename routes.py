@@ -90,11 +90,20 @@ def search():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     from app import ADMIN_USERNAME, ADMIN_PASSWORD
+    from flask_wtf.csrf import validate_csrf
+    from wtforms import ValidationError
     
     if current_user.is_authenticated:
         return redirect(url_for('admin_dashboard'))
     
     if request.method == 'POST':
+        # Verify CSRF token
+        try:
+            validate_csrf(request.form.get('csrf_token'))
+        except ValidationError:
+            flash('CSRF token validation failed. Please try again.', 'danger')
+            return render_template('admin/login.html', title="Login")
+        
         username = request.form.get('username')
         password = request.form.get('password')
         
