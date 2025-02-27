@@ -1,14 +1,23 @@
 import os
 import re
+import logging
 from datetime import datetime
 from functools import wraps
+
 from flask import render_template, request, redirect, url_for, flash, abort, jsonify, make_response
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy import desc
+from flask_wtf import FlaskForm
+from wtforms import StringField, TextAreaField, BooleanField, SelectField, HiddenField
+from wtforms.validators import DataRequired
+
 from app import app, db, cache
 from models import User, Category, Tag, Article
 from utils import generate_sitemap
+
+# Настраиваем логирование для отслеживания ошибок
+logging.basicConfig(level=logging.DEBUG)
 
 # Custom decorator for admin-only routes
 def admin_required(f):
@@ -194,51 +203,69 @@ def admin_articles():
 @admin_required
 def new_article():
     """Simplified article creation with better error handling and performance"""
+    # Импортируем необходимые библиотеки для работы с формой
+    from flask_wtf import FlaskForm
+    from wtforms import StringField, TextAreaField, BooleanField, SelectField, HiddenField
+    from wtforms.validators import DataRequired
+    
+    # Создаем базовый класс формы для CSRF-защиты
+    class ArticleForm(FlaskForm):
+        pass
+    
+    # Создаем экземпляр формы
+    form = ArticleForm()
+    
+    # Получаем категории и теги для выпадающих списков
     categories = Category.query.all()
     tags = Tag.query.all()
     
-    if request.method == 'POST':
+    if request.method == 'POST' and form.validate_on_submit():
         try:
-            # Basic article data
+            # Логируем начало создания статьи
+            app.logger.debug("Starting article creation process")
+            
+            # Получаем данные из формы
             title = request.form.get('title', '').strip()
             content = request.form.get('content', '').strip()
             summary = request.form.get('summary', '').strip()
             published = request.form.get('published') == 'on'
             category_id = request.form.get('category_id')
+            new_tags_str = request.form.get('new_tags', '').strip()
             
-            # Validate required fields
+            # Проверяем обязательные поля
             if not title:
-                flash('Title is required!', 'danger')
+                flash('Заголовок обязателен!', 'danger')
                 return render_template('admin/edit_article.html',
-                                     categories=categories,
-                                     tags=tags,
-                                     is_edit=False,
-                                     title="New Article")
+                                      form=form,
+                                      categories=categories,
+                                      tags=tags,
+                                      is_edit=False,
+                                      title="Новая статья")
             
-            # Get or create slug
+            # Генерируем slug, если не указан
             slug = request.form.get('slug', '').strip()
             if not slug:
                 from slugify import slugify
                 slug = slugify(title)
             
-            # Make sure slug is not empty or just a hyphen
+            # Проверяем валидность slug
             if not slug or slug == '-':
-                slug = f"post-{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}"
-                
-            # Ensure slug is unique
+                slug = f"post-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            
+            # Убеждаемся, что slug уникален
+            app.logger.debug(f"Checking slug uniqueness: {slug}")
             base_slug = slug
             counter = 1
             while Article.query.filter_by(slug=slug).first():
                 slug = f"{base_slug}-{counter}"
                 counter += 1
+                app.logger.debug(f"Created new slug: {slug}")
             
-            # Meta info - с ограничением длины для безопасности
+            # Создаем метаданные
             meta_title = (request.form.get('meta_title', '').strip() or title)[:200]
             meta_description = request.form.get('meta_description', '').strip() or summary
-            # Уже не ограничиваем длину meta_description, так как изменили тип поля на Text
-            meta_keywords = (request.form.get('meta_keywords', '').strip())[:200]
             
-            # Create article
+            # Создаем новую статью
             article = Article(
                 title=title,
                 slug=slug,
@@ -248,167 +275,188 @@ def new_article():
                 user_id=current_user.id,
                 category_id=category_id if category_id else None,
                 meta_title=meta_title,
-                meta_description=meta_description,
-                meta_keywords=meta_keywords
+                meta_description=meta_description
             )
             
-            # Add article to session
+            # Добавляем статью в сессию
+            app.logger.debug("Adding article to session")
             db.session.add(article)
-            db.session.flush()  # Get ID without committing
+            db.session.flush()  # Получаем ID без коммита
             
-            # Process tags - in a simpler way
-            tag_ids = request.form.getlist('tags')
-            if tag_ids:
-                # Use a more efficient approach
-                for tag_id in tag_ids:
-                    tag = Tag.query.get(tag_id)
-                    if tag:
-                        article.tags.append(tag)
-            
-            # Process new tags
-            new_tags_str = request.form.get('new_tags', '').strip()
+            # Обрабатываем теги
             if new_tags_str:
+                app.logger.debug(f"Processing tags: {new_tags_str}")
                 tag_names = [t.strip() for t in new_tags_str.split(',') if t.strip()]
                 for tag_name in tag_names:
-                    # Check for existing tag
+                    # Проверяем существующие теги
                     tag = Tag.query.filter_by(name=tag_name).first()
                     if not tag:
-                        # Create new tag with auto-slug
+                        # Создаем новый тег с автоматическим slug
                         from slugify import slugify
-                        tag = Tag(name=tag_name, slug=slugify(tag_name))
+                        tag_slug = slugify(tag_name)
+                        if not tag_slug:
+                            tag_slug = f"tag-{len(tag_name)}-{datetime.now().strftime('%Y%m%d')}"
+                        tag = Tag(name=tag_name, slug=tag_slug)
                         db.session.add(tag)
-                        db.session.flush()  # Get ID without committing
+                        db.session.flush()
                     article.tags.append(tag)
             
-            # Commit all changes
+            # Коммитим все изменения
+            app.logger.debug("Committing changes to database")
             db.session.commit()
             
-            # Update cache and sitemap
+            # Обновляем кэш и карту сайта
             cache.clear()
             generate_sitemap()
             
-            flash('Article created successfully!', 'success')
+            flash('Статья успешно создана!', 'success')
             return redirect(url_for('article', slug=article.slug))
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error creating article: {str(e)}', 'danger')
+            app.logger.error(f"Error creating article: {str(e)}")
+            flash(f'Ошибка при создании статьи: {str(e)}', 'danger')
             return render_template('admin/edit_article.html',
-                                categories=categories,
-                                tags=tags,
-                                is_edit=False,
-                                title="New Article")
+                                 form=form,
+                                 categories=categories,
+                                 tags=tags,
+                                 is_edit=False,
+                                 title="Новая статья")
     
-    # GET request
+    # GET запрос
     return render_template('admin/edit_article.html',
-                        categories=categories,
-                        tags=tags,
-                        is_edit=False,
-                        title="New Article")
+                         form=form,
+                         categories=categories,
+                         tags=tags,
+                         is_edit=False,
+                         title="Новая статья")
 
 @app.route('/admin/article/edit/<int:article_id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_article(article_id):
     """Simplified article editing with better error handling and performance"""
-    # Get article and related data
+    # Импортируем необходимые библиотеки для работы с формой
+    from flask_wtf import FlaskForm
+    from wtforms import StringField, TextAreaField, BooleanField, SelectField, HiddenField
+    from wtforms.validators import DataRequired
+    
+    # Создаем базовый класс формы для CSRF-защиты
+    class ArticleForm(FlaskForm):
+        pass
+    
+    # Создаем экземпляр формы
+    form = ArticleForm()
+    
+    # Получаем статью и сопутствующие данные
     article = Article.query.get_or_404(article_id)
     categories = Category.query.all()
     tags = Tag.query.all()
     
-    if request.method == 'POST':
+    if request.method == 'POST' and form.validate_on_submit():
         try:
-            # Basic article data with validation
+            # Логируем начало процесса редактирования
+            app.logger.debug(f"Starting article edit process for ID: {article_id}")
+            
+            # Получаем основные данные статьи
             title = request.form.get('title', '').strip()
             if not title:
-                flash('Title is required!', 'danger')
+                flash('Заголовок обязателен!', 'danger')
                 return render_template('admin/edit_article.html',
-                                     article=article,
-                                     categories=categories,
-                                     tags=tags,
-                                     is_edit=True,
-                                     title=f"Edit: {article.title}")
+                                      form=form,
+                                      article=article,
+                                      categories=categories,
+                                      tags=tags,
+                                      is_edit=True,
+                                      title=f"Редактирование: {article.title}")
             
-            # Update article properties
+            # Обновляем свойства статьи
             article.title = title
             article.content = request.form.get('content', '').strip()
             article.summary = request.form.get('summary', '').strip()
             article.category_id = request.form.get('category_id') or None
             article.published = request.form.get('published') == 'on'
             
-            # Update slug if explicitly provided
+            # Обновляем slug, если указан новый
             new_slug = request.form.get('slug', '').strip()
             if new_slug and new_slug != article.slug:
                 from slugify import slugify
                 
-                # Make sure slug is not empty or just a hyphen
+                # Проверяем валидность slug
                 if not new_slug or new_slug == '-':
-                    new_slug = f"post-{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}"
-                    
-                # Ensure slug is unique (only if it's changing)
+                    new_slug = f"post-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+                
+                # Обеспечиваем уникальность slug
+                app.logger.debug(f"Checking uniqueness for new slug: {new_slug}")
                 base_slug = new_slug
                 counter = 1
                 test_slug = new_slug
                 while Article.query.filter(Article.slug == test_slug, Article.id != article.id).first():
                     test_slug = f"{base_slug}-{counter}"
                     counter += 1
-                    
+                    app.logger.debug(f"Created new slug: {test_slug}")
+                
                 article.slug = test_slug
             
-            # Meta info с ограничением длины для безопасности
+            # Обновляем метаданные
             article.meta_title = (request.form.get('meta_title', '').strip() or article.title)[:200]
             article.meta_description = request.form.get('meta_description', '').strip() or article.summary
-            # Уже не ограничиваем длину meta_description, так как изменили тип поля на Text
-            article.meta_keywords = (request.form.get('meta_keywords', '').strip())[:200]
             
-            # Clear existing tags (more efficient than replacing the entire collection)
+            # Очищаем существующие теги
+            app.logger.debug("Clearing existing tags")
             article.tags = []
             db.session.flush()
             
-            # Process tags - in a simpler way
-            tag_ids = request.form.getlist('tags')
-            if tag_ids:
-                for tag_id in tag_ids:
-                    tag = Tag.query.get(tag_id)
-                    if tag:
-                        article.tags.append(tag)
-            
-            # Process new tags
+            # Обрабатываем теги
             new_tags_str = request.form.get('new_tags', '').strip()
             if new_tags_str:
+                app.logger.debug(f"Processing tags: {new_tags_str}")
                 tag_names = [t.strip() for t in new_tags_str.split(',') if t.strip()]
                 for tag_name in tag_names:
-                    # Check for existing tag
+                    # Проверяем существующие теги
                     tag = Tag.query.filter_by(name=tag_name).first()
                     if not tag:
-                        # Create new tag with auto-slug
+                        # Создаем новый тег с автоматическим slug
                         from slugify import slugify
-                        tag = Tag(name=tag_name, slug=slugify(tag_name))
+                        tag_slug = slugify(tag_name)
+                        if not tag_slug:
+                            tag_slug = f"tag-{len(tag_name)}-{datetime.now().strftime('%Y%m%d')}"
+                        tag = Tag(name=tag_name, slug=tag_slug)
                         db.session.add(tag)
                         db.session.flush()
                     article.tags.append(tag)
             
-            # Commit all changes
+            # Коммитим все изменения
+            app.logger.debug("Committing changes to database")
             db.session.commit()
             
-            # Update cache and sitemap
+            # Обновляем кэш и карту сайта
             cache.clear()
             generate_sitemap()
             
-            flash('Article updated successfully!', 'success')
+            flash('Статья успешно обновлена!', 'success')
             return redirect(url_for('article', slug=article.slug))
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error updating article: {str(e)}', 'danger')
+            app.logger.error(f"Error updating article: {str(e)}")
+            flash(f'Ошибка при обновлении статьи: {str(e)}', 'danger')
+            return render_template('admin/edit_article.html',
+                                 form=form,
+                                 article=article,
+                                 categories=categories,
+                                 tags=tags,
+                                 is_edit=True,
+                                 title=f"Редактирование: {article.title}")
     
-    # GET request
+    # GET запрос
     return render_template('admin/edit_article.html',
+                         form=form,
                          article=article,
                          categories=categories,
                          tags=tags,
                          is_edit=True,
-                         title=f"Edit: {article.title}")
+                         title=f"Редактирование: {article.title}")
 
 @app.route('/admin/article/delete/<int:article_id>', methods=['POST'])
 @login_required
