@@ -14,35 +14,95 @@ form.article-form {
   max-height: 90vh;
   overflow-y: auto;
   padding-right: 10px;
+  will-change: scroll-position; /* Оптимизация для скроллинга */
+  contain: layout style; /* Изоляция для лучшей производительности рендеринга */
 }
 
 /* Улучшаем читаемость полей формы */
 .form-control {
   max-height: 500px;
+  -webkit-overflow-scrolling: touch; /* Плавный скроллинг на iOS */
 }
 
 /* Ограничиваем размер текстовых полей для предотвращения проблем с производительностью */
 textarea.form-control {
   max-height: 400px;
+  min-height: 100px; /* Предотвращает схлопывание поля */
+  line-height: 1.5; /* Улучшает читаемость */
+  font-family: monospace; /* Лучше для технического контента */
+  tab-size: 2; /* Улучшает отображение отступов */
+  will-change: contents; /* Оптимизация производительности при вводе */
+  contain: content; /* Изоляция контента для производительности */
+}
+
+/* Предотвращение проблем с формами */
+form {
+  contain: content; /* Изоляция для лучшей производительности */
+}
+
+/* Предотвращаем переполнение для всех элементов */
+* {
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Улучшаем отзывчивость кнопок для предотвращения проблем с зависанием при нажатии */
 .btn {
   transition: background-color 0s !important;
+  /* Предотвращаем множественные нажатия */
+  pointer-events: auto;
+}
+/* Делаем кнопку отправки формы визуально более заметной */
+button[type="submit"] {
+  position: relative;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Добавляем индикатор загрузки после нажатия на кнопку для визуальной обратной связи */
+button[type="submit"]:active::after {
+  content: '...';
+  display: inline-block;
+  margin-left: 5px;
+  animation: none !important;
 }
 
 /* Улучшаем отображение таблиц с большим количеством данных */
 .table-responsive {
   overflow-x: auto;
+  contain: content; /* Изоляция для лучшей производительности */
+  will-change: scroll-position; /* Оптимизация скроллинга */
+}
+
+.table {
+  table-layout: fixed; /* Более предсказуемый рендеринг */
+}
+
+/* Улучшение стабильности при работе с формами */
+input, textarea, select {
+  backface-visibility: hidden; /* Устраняет проблемы с рендерингом на некоторых браузерах */
 }
 
 /* Предотвращаем зависания на мобильных устройствах */
 @media (max-width: 767px) {
   .table-responsive {
     border: none;
+    -webkit-overflow-scrolling: touch; /* Плавный скроллинг на iOS */
   }
   
   .table td, .table th {
     white-space: normal;
+    font-size: 0.9rem; /* Немного уменьшаем текст для мобильных */
+  }
+  
+  /* Предотвращаем переполнение на маленьких экранах */
+  textarea.form-control {
+    max-height: 200px; /* Меньшая высота на мобильных */
+  }
+  
+  /* Улучшаем навигацию на мобильных */
+  .navbar-collapse {
+    max-height: 80vh;
+    overflow-y: auto;
   }
 }

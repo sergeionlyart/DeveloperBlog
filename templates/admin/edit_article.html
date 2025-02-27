@@ -53,9 +53,31 @@
                     
                     <div class="mb-3">
                         <label for="content" class="form-label">Content (Markdown)</label>
-                        <textarea class="form-control" id="content" name="content" rows="10" required>{{ article.content if article else '' }}</textarea>
-                        <small class="text-muted">Use Markdown for formatting.</small>
+                        <textarea class="form-control" id="content" name="content" rows="10" required 
+                                  maxlength="65535">{{ article.content if article else '' }}</textarea>
+                        <small class="text-muted">Use Markdown for formatting. Character limit: 65,535</small>
+                        <div class="mt-1">
+                            <span id="content-chars" class="text-muted">0</span> characters
+                        </div>
                     </div>
+                    
+                    <script>
+                    // Simple non-blocking character counter
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const contentArea = document.getElementById('content');
+                        const charCounter = document.getElementById('content-chars');
+                        
+                        if (contentArea && charCounter) {
+                            // Инициализация счетчика при загрузке
+                            charCounter.textContent = contentArea.value.length;
+                            
+                            // Обновление при вводе
+                            contentArea.addEventListener('input', function() {
+                                charCounter.textContent = this.value.length;
+                            });
+                        }
+                    });
+                    </script>
                 </div>
             </div>
         </div>
