@@ -7,6 +7,22 @@
     <!-- Dynamic meta tags for SEO -->
     <title>{% if title %}{{ title }} | Developer Blog{% else %}Developer Blog{% endif %}</title>
     <meta name="description" content="{% if description %}{{ description }}{% else %}A minimalist developer blog with tutorials, code snippets, and tech insights.{% endif %}">
+    <meta name="author" content="Developer Blog Team">
+    <meta name="language" content="English">
+    
+    <!-- SEO meta tags -->
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow">
+    <meta name="bingbot" content="index, follow">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="application-name" content="Developer Blog">
+    <meta name="apple-mobile-web-app-title" content="Developer Blog">
+    <meta name="theme-color" content="#212529">
+    <meta name="msapplication-TileColor" content="#212529">
     
     <!-- Default OpenGraph meta tags (for non-article pages) -->
     {% if not article %}

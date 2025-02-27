@@ -1,17 +1,25 @@
 {% if breadcrumbs %}
 <nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb">
+    <ol class="breadcrumb p-3 bg-dark-subtle rounded shadow-sm" vocab="https://schema.org/" typeof="BreadcrumbList">
         {% for text, url in breadcrumbs %}
             {% if not loop.last %}
-                <li class="breadcrumb-item"><a href="{{ url }}">{{ text }}</a></li>
+                <li class="breadcrumb-item" property="itemListElement" typeof="ListItem">
+                    <a href="{{ url }}" property="item" typeof="WebPage">
+                        <span property="name">{{ text }}</span>
+                    </a>
+                    <meta property="position" content="{{ loop.index }}">
+                </li>
             {% else %}
-                <li class="breadcrumb-item active" aria-current="page">{{ text }}</li>
+                <li class="breadcrumb-item active" aria-current="page" property="itemListElement" typeof="ListItem">
+                    <span property="name">{{ text }}</span>
+                    <meta property="position" content="{{ loop.index }}">
+                </li>
             {% endif %}
         {% endfor %}
     </ol>
 </nav>
 
-<!-- Structured data breadcrumbs for SEO -->
+<!-- Enhanced structured data breadcrumbs for SEO with absolute URLs -->
 <script type="application/ld+json">
 {
     "@context": "https://schema.org",
@@ -22,7 +30,7 @@
             "@type": "ListItem",
             "position": {{ loop.index }},
             "name": "{{ text }}",
-            "item": "{{ request.url_root.rstrip('/') }}{{ url }}"
+            "item": "{{ (request.url_root.rstrip('/') + url) if url else request.url }}"
         }{% if not loop.last %},{% endif %}
         {% endfor %}
     ]

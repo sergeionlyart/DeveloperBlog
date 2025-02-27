@@ -2,7 +2,7 @@
 
 {% block content %}
 <!-- Breadcrumbs for search or pagination pages -->
-{% if search_query or request.args.get('page') %}
+{% if breadcrumbs|default([]) %}
 {% include "partials/breadcrumbs.html" %}
 {% endif %}
 
@@ -32,41 +32,52 @@
         <!-- Articles list -->
         {% if articles.items|default([]) %}
             {% for article in articles.items %}
-            <div class="card mb-4 article-card bg-dark border-secondary">
+            <article class="card mb-4 article-card bg-dark border-secondary" itemscope itemtype="https://schema.org/BlogPosting">
                 <div class="card-body">
-                    <h2 class="card-title"><a href="{{ url_for('article', slug=article.slug) }}" class="text-decoration-none">{{ article.title }}</a></h2>
+                    <h2 class="card-title">
+                        <a href="{{ url_for('article', slug=article.slug) }}" class="text-decoration-none" itemprop="headline url">{{ article.title }}</a>
+                    </h2>
                     
                     <div class="mb-2 text-muted">
                         <small>
-                            <i class="far fa-calendar-alt me-1"></i> {{ article.created_at.strftime('%B %d, %Y') }}
+                            <meta itemprop="datePublished" content="{{ article.created_at.isoformat() }}">
+                            <meta itemprop="dateModified" content="{{ article.updated_at.isoformat() }}">
+                            <i class="far fa-calendar-alt me-1"></i> <time datetime="{{ article.created_at.isoformat() }}">{{ article.created_at.strftime('%B %d, %Y') }}</time>
+                            
                             {% if article.category %}
                             <span class="mx-2">|</span>
-                            <a href="{{ url_for('category', slug=article.category.slug) }}" class="text-decoration-none">
+                            <a href="{{ url_for('category', slug=article.category.slug) }}" class="text-decoration-none" itemprop="articleSection">
                                 <i class="fas fa-folder me-1"></i>{{ article.category.name }}
                             </a>
                             {% endif %}
+                            
+                            <span itemprop="author" itemscope itemtype="https://schema.org/Person">
+                                <meta itemprop="name" content="{{ article.author.username }}">
+                            </span>
+                            
+                            <link itemprop="mainEntityOfPage" href="{{ url_for('article', slug=article.slug, _external=True) }}">
                         </small>
                     </div>
                     
                     {% if article.summary %}
-                    <p class="card-text">{{ article.summary }}</p>
+                    <p class="card-text" itemprop="description">{{ article.summary }}</p>
                     {% else %}
-                    <p class="card-text">{{ article.content|striptags|truncate(200) }}</p>
+                    <p class="card-text" itemprop="description">{{ article.content|striptags|truncate(200) }}</p>
                     {% endif %}
                     
                     {% if article.tags %}
                     <div class="mb-2">
                         {% for tag in article.tags %}
-                        <a href="{{ url_for('tag', slug=tag.slug) }}" class="badge rounded-pill text-bg-secondary tag-badge text-decoration-none">
-                            <i class="fas fa-tag me-1"></i>{{ tag.name }}
+                        <a href="{{ url_for('tag', slug=tag.slug) }}" class="badge rounded-pill text-bg-secondary tag-badge text-decoration-none" rel="tag">
+                            <i class="fas fa-tag me-1"></i><span itemprop="keywords">{{ tag.name }}</span>
                         </a>
                         {% endfor %}
                     </div>
                     {% endif %}
                     
-                    <a href="{{ url_for('article', slug=article.slug) }}" class="btn btn-sm btn-primary">Read more</a>
+                    <a href="{{ url_for('article', slug=article.slug) }}" class="btn btn-sm btn-primary" aria-label="Read the full article titled {{ article.title }}">Read more</a>
                 </div>
-            </div>
+            </article>
             {% endfor %}
             
             <!-- Pagination -->
