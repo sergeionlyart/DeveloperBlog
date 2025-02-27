@@ -43,27 +43,13 @@ if __name__ == "__main__":
         email = "admin@example.com"
         password = "adminpassword"
         
-        # Ask for credentials
         print("Create Admin User")
         print("-----------------")
-        print(f"Default: username='{username}', email='{email}', password='{password}'")
-        print("Press Enter to use defaults or enter new values.")
-        
-        new_username = input("Username: ").strip()
-        if new_username:
-            username = new_username
-            
-        new_email = input("Email: ").strip()
-        if new_email:
-            email = new_email
-            
-        new_password = input("Password: ").strip()
-        if new_password:
-            password = new_password
+        print(f"Using credentials: username='{username}', email='{email}', password='{password}'")
         
         # Create the admin user
         if create_admin_user(username, email, password):
             print(f"\nAdmin user '{username}' created successfully!")
             print(f"You can now login at /login with these credentials.")
         else:
-            print("\nFailed to create admin user.")
+            print("\nFailed to create admin user or user already exists.")
