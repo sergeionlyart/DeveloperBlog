@@ -86,7 +86,7 @@
                 <ul class="pagination justify-content-center">
                     {% if articles.has_prev %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for(request.endpoint, page=articles.prev_num, **request.args) }}" aria-label="Previous">
+                        <a class="page-link" href="{{ url_for(request.endpoint, page=articles.prev_num, **request.args) }}" aria-label="Previous" rel="prev">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
@@ -116,7 +116,7 @@
                     
                     {% if articles.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for(request.endpoint, page=articles.next_num, **request.args) }}" aria-label="Next">
+                        <a class="page-link" href="{{ url_for(request.endpoint, page=articles.next_num, **request.args) }}" aria-label="Next" rel="next">
                             <span aria-hidden="true">&raquo;</span>
                         </a>
                     </li>
@@ -160,13 +160,14 @@
                     <div class="col-sm-12">
                         <ul class="list-unstyled mb-0">
                             {% for category in categories %}
-                            <li class="mb-2">
-                                <a href="{{ url_for('category', slug=category.slug) }}" class="text-decoration-none">
-                                    <i class="fas fa-folder me-1"></i>{{ category.name }}
-                                    <span class="badge rounded-pill text-bg-secondary ms-1">
+                            <li class="mb-2" itemscope itemtype="https://schema.org/Category">
+                                <a href="{{ url_for('category', slug=category.slug) }}" class="text-decoration-none" itemprop="url">
+                                    <i class="fas fa-folder me-1"></i><span itemprop="name">{{ category.name }}</span>
+                                    <span class="badge rounded-pill text-bg-secondary ms-1" itemprop="articleCount">
                                         {{ category.articles.filter_by(published=True).count() }}
                                     </span>
                                 </a>
+                                <meta itemprop="description" content="{{ category.description or 'Articles in the ' + category.name + ' category' }}">
                             </li>
                             {% endfor %}
                         </ul>

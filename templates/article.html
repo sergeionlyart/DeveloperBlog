@@ -5,47 +5,65 @@
 {% include "partials/breadcrumbs.html" %}
 
 <div class="row">
-    <div class="col-lg-8">
-        <!-- Article header -->
-        <h1 class="mb-3">{{ article.title }}</h1>
+    <article class="col-lg-8" itemscope itemtype="https://schema.org/TechArticle">
+        <!-- Hidden metadata for structured data -->
+        <meta itemprop="datePublished" content="{{ article.created_at.isoformat() }}">
+        <meta itemprop="dateModified" content="{{ article.updated_at.isoformat() }}">
+        <link itemprop="mainEntityOfPage" href="{{ request.url }}">
         
-        <!-- Article metadata -->
-        <div class="text-muted mb-4">
-            <span><i class="far fa-calendar-alt me-1"></i> {{ article.created_at.strftime('%B %d, %Y') }}</span>
+        <!-- Article header -->
+        <header>
+            <h1 class="mb-3" itemprop="headline">{{ article.title }}</h1>
             
-            {% if article.updated_at != article.created_at %}
-            <span class="ms-3"><i class="fas fa-sync-alt me-1"></i> Updated: {{ article.updated_at.strftime('%B %d, %Y') }}</span>
-            {% endif %}
-            
-            {% if article.category %}
-            <span class="ms-3">
-                <a href="{{ url_for('category', slug=article.category.slug) }}" class="text-decoration-none">
-                    <i class="fas fa-folder me-1"></i>{{ article.category.name }}
-                </a>
-            </span>
-            {% endif %}
-            
-            {% if current_user.is_authenticated and current_user.is_admin %}
-            <span class="ms-3">
-                <a href="{{ url_for('edit_article', article_id=article.id) }}" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-edit me-1"></i>Edit
-                </a>
-            </span>
-            {% endif %}
-        </div>
+            <!-- Article metadata -->
+            <div class="text-muted mb-4">
+                <span>
+                    <i class="far fa-calendar-alt me-1"></i> 
+                    <time datetime="{{ article.created_at.isoformat() }}">{{ article.created_at.strftime('%B %d, %Y') }}</time>
+                </span>
+                
+                {% if article.updated_at != article.created_at %}
+                <span class="ms-3">
+                    <i class="fas fa-sync-alt me-1"></i> Updated: 
+                    <time datetime="{{ article.updated_at.isoformat() }}">{{ article.updated_at.strftime('%B %d, %Y') }}</time>
+                </span>
+                {% endif %}
+                
+                {% if article.category %}
+                <span class="ms-3" itemprop="articleSection">
+                    <a href="{{ url_for('category', slug=article.category.slug) }}" class="text-decoration-none">
+                        <i class="fas fa-folder me-1"></i>{{ article.category.name }}
+                    </a>
+                </span>
+                {% endif %}
+                
+                <!-- Author information -->
+                <span itemprop="author" itemscope itemtype="https://schema.org/Person">
+                    <meta itemprop="name" content="{{ article.author.username }}">
+                </span>
+                
+                {% if current_user.is_authenticated and current_user.is_admin %}
+                <span class="ms-3">
+                    <a href="{{ url_for('edit_article', article_id=article.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </a>
+                </span>
+                {% endif %}
+            </div>
+        </header>
         
         <!-- Article summary (if available) -->
         {% if article.summary %}
         <div class="card mb-4 bg-dark border-secondary">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-info-circle me-2"></i>Summary</h5>
-                <p class="card-text">{{ article.summary }}</p>
+                <p class="card-text" itemprop="description">{{ article.summary }}</p>
             </div>
         </div>
         {% endif %}
         
         <!-- Article content -->
-        <div class="article-content mb-4">
+        <div class="article-content mb-4" itemprop="articleBody">
             {{ article.content|markdown }}
         </div>
         
@@ -54,7 +72,7 @@
         <div class="mb-4">
             <h5><i class="fas fa-tags me-2"></i>Tags</h5>
             {% for tag in article.tags %}
-            <a href="{{ url_for('tag', slug=tag.slug) }}" class="badge rounded-pill text-bg-secondary tag-badge">
+            <a href="{{ url_for('tag', slug=tag.slug) }}" class="badge rounded-pill text-bg-secondary tag-badge" rel="tag" itemprop="keywords">
                 {{ tag.name }}
             </a>
             {% endfor %}
@@ -62,27 +80,34 @@
         {% endif %}
         
         <!-- Share links -->
-        <div class="mb-5">
+        <div class="mb-5" vocab="https://schema.org/" typeof="InteractionCounter">
             <h5><i class="fas fa-share-alt me-2"></i>Share</h5>
-            <a href="https://twitter.com/intent/tweet?url={{ request.url }}&text={{ article.title }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info me-2">
-                <i class="fab fa-twitter me-1"></i>Twitter
-            </a>
-            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary me-2">
-                <i class="fab fa-linkedin me-1"></i>LinkedIn
-            </a>
-            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">
-                <i class="fab fa-facebook me-1"></i>Facebook
-            </a>
+            <meta property="interactionType" content="https://schema.org/ShareAction">
+            <div property="potentialAction" typeof="ShareAction">
+                <meta property="target" content="{{ request.url }}">
+                <a href="https://twitter.com/intent/tweet?url={{ request.url }}&text={{ article.title }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info me-2">
+                    <i class="fab fa-twitter me-1"></i>Twitter
+                </a>
+                <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary me-2">
+                    <i class="fab fa-linkedin me-1"></i>LinkedIn
+                </a>
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">
+                    <i class="fab fa-facebook me-1"></i>Facebook
+                </a>
+            </div>
         </div>
         
         <!-- Author info -->
         <div class="card mb-4 bg-dark border-secondary">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-user me-2"></i>About the Author</h5>
-                <p class="card-text">Software developer and tech enthusiast. I write about programming, web development, and technology.</p>
+                <p class="card-text" itemprop="author" itemscope itemtype="https://schema.org/Person">
+                    <span itemprop="name">{{ article.author.username }}</span> is a software developer and tech enthusiast. 
+                    Writing about programming, web development, and technology.
+                </p>
             </div>
         </div>
-    </div>
+    </article>
     
     <!-- Sidebar -->
     <div class="col-lg-4">
@@ -100,12 +125,14 @@
             {% if related_articles %}
             <div class="card mb-4 bg-dark border-secondary">
                 <div class="card-header">Related Articles</div>
-                <div class="card-body">
+                <div class="card-body" vocab="https://schema.org/" typeof="ItemList">
+                    <meta property="name" content="Related Articles">
                     <ul class="list-unstyled mb-0">
                         {% for related in related_articles[:5] %}
-                        <li class="mb-2">
-                            <a href="{{ url_for('article', slug=related.slug) }}" class="text-decoration-none">
-                                <i class="fas fa-file-alt me-1"></i>{{ related.title }}
+                        <li class="mb-2" property="itemListElement" typeof="ListItem">
+                            <meta property="position" content="{{ loop.index }}">
+                            <a href="{{ url_for('article', slug=related.slug) }}" class="text-decoration-none" property="url">
+                                <i class="fas fa-file-alt me-1"></i><span property="name">{{ related.title }}</span>
                             </a>
                         </li>
                         {% endfor %}
@@ -120,15 +147,19 @@
         {% if latest_articles %}
         <div class="card mb-4 bg-dark border-secondary">
             <div class="card-header">Latest Articles</div>
-            <div class="card-body">
+            <div class="card-body" vocab="https://schema.org/" typeof="ItemList">
+                <meta property="name" content="Latest Articles">
                 <ul class="list-unstyled mb-0">
+                    {% set position = 1 %}
                     {% for latest in latest_articles %}
                     {% if latest.id != article.id %}
-                    <li class="mb-2">
-                        <a href="{{ url_for('article', slug=latest.slug) }}" class="text-decoration-none">
-                            <i class="fas fa-file-alt me-1"></i>{{ latest.title }}
+                    <li class="mb-2" property="itemListElement" typeof="ListItem">
+                        <meta property="position" content="{{ position }}">
+                        <a href="{{ url_for('article', slug=latest.slug) }}" class="text-decoration-none" property="url">
+                            <i class="fas fa-file-alt me-1"></i><span property="name">{{ latest.title }}</span>
                         </a>
                     </li>
+                    {% set position = position + 1 %}
                     {% endif %}
                     {% endfor %}
                 </ul>
