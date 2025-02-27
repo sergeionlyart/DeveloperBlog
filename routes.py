@@ -181,16 +181,10 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        # Проверяем с использованием статических учетных данных
-        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-            # Если совпадает, используем существующую базу данных для получения объекта пользователя
-            user = User.query.filter_by(username=username).first()
-            
-            # Если пользователя нет в БД (что странно, но возможно), обработаем это
-            if not user:
-                flash('Database error: Admin user not found.', 'danger')
-                return render_template('admin/login.html', title="Login")
-                
+        # Secure authentication using database records and hashed passwords
+        user = User.query.filter_by(username=username).first()
+        
+        if user and check_password_hash(user.password_hash, password):
             login_user(user)
             next_page = request.args.get('next')
             flash('Login successful!', 'success')

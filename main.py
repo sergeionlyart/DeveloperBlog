@@ -35,10 +35,13 @@ def handle_signal(signum, frame):
     """Усовершенствованный обработчик сигналов
     
     Важно: Используем safe_log чтобы избежать реентрантных вызовов и зависаний.
-    Обрабатываем как WINCH, так и другие критические сигналы.
+    Полностью игнорируем SIGWINCH, который вызывает большинство проблем.
     """
+    # Полностью игнорируем SIGWINCH, чтобы предотвратить каскадное логирование
+    if signum == signal.SIGWINCH:
+        return
+        
     signal_names = {
-        signal.SIGWINCH: "SIGWINCH (window change)",
         signal.SIGTERM: "SIGTERM (termination)",
         signal.SIGINT: "SIGINT (interrupt)",
         signal.SIGHUP: "SIGHUP (hangup)"
@@ -51,8 +54,13 @@ def handle_signal(signum, frame):
     
     # Для сигналов завершения (TERM, INT, HUP) делаем специальную обработку
     if signum in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
-        # Здесь можно выполнить операции очистки перед завершением
-        pass
+        # Очищаем кэш при аккуратном завершении приложения
+        try:
+            from app import cache
+            cache.clear()
+            safe_log('info', "Cache cleared during shutdown")
+        except Exception:
+            pass
 
 # Регистрируем обработчики сигналов
 for sig in (signal.SIGWINCH, signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
