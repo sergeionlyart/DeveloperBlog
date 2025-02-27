@@ -61,9 +61,9 @@ class Article(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     tags = db.relationship('Tag', secondary=article_tags, 
                            backref=db.backref('articles', lazy='dynamic'))
-    meta_title = db.Column(db.String(120))
-    meta_description = db.Column(db.String(160))
-    meta_keywords = db.Column(db.String(120))
+    meta_title = db.Column(db.String(200))
+    meta_description = db.Column(db.Text)  # Изменено на Text для поддержки длинных описаний
+    meta_keywords = db.Column(db.String(200))
     
     def __init__(self, *args, **kwargs):
         if 'slug' not in kwargs:

@@ -177,10 +177,11 @@ def new_article():
                 from slugify import slugify
                 slug = slugify(title)
             
-            # Meta info - with defaults if empty
-            meta_title = request.form.get('meta_title', '').strip() or title
+            # Meta info - с ограничением длины для безопасности
+            meta_title = (request.form.get('meta_title', '').strip() or title)[:200]
             meta_description = request.form.get('meta_description', '').strip() or summary
-            meta_keywords = request.form.get('meta_keywords', '').strip()
+            # Уже не ограничиваем длину meta_description, так как изменили тип поля на Text
+            meta_keywords = (request.form.get('meta_keywords', '').strip())[:200]
             
             # Create article
             article = Article(
@@ -286,10 +287,11 @@ def edit_article(article_id):
                 from slugify import slugify
                 article.slug = new_slug
             
-            # Meta info
-            article.meta_title = request.form.get('meta_title', '').strip() or article.title
+            # Meta info с ограничением длины для безопасности
+            article.meta_title = (request.form.get('meta_title', '').strip() or article.title)[:200]
             article.meta_description = request.form.get('meta_description', '').strip() or article.summary
-            article.meta_keywords = request.form.get('meta_keywords', '').strip()
+            # Уже не ограничиваем длину meta_description, так как изменили тип поля на Text
+            article.meta_keywords = (request.form.get('meta_keywords', '').strip())[:200]
             
             # Clear existing tags (more efficient than replacing the entire collection)
             article.tags = []
