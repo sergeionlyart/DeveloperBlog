@@ -17,6 +17,9 @@ ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "adminpassword"  # В реальном приложении используйте более сложный пароль
 ADMIN_EMAIL = "admin@example.com"
 
+# Логирование учетных данных администратора для удобства разработки
+logging.info(f"Default admin credentials: {ADMIN_USERNAME} / {ADMIN_PASSWORD}")
+
 # Set up base class for SQLAlchemy models
 class Base(DeclarativeBase):
     pass
