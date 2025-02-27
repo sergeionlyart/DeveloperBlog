@@ -23,9 +23,9 @@
     </div>
 </div>
 
-<!-- Using a basic form without JavaScript-heavy components for improved stability -->
+<!-- Simplified form with minimal components for better stability -->
 <form method="post" class="article-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {{ form.hidden_tag() }}
     <div class="row">
         <!-- Main content column -->
         <div class="col-lg-8">
@@ -47,28 +47,20 @@
                     
                     <div class="mb-3">
                         <label for="summary" class="form-label">Summary</label>
-                        <textarea class="form-control" id="summary" name="summary" rows="3">{{ article.summary if article else '' }}</textarea>
-                        <small class="text-muted">A brief description of the article. Used in listings and SEO.</small>
+                        <textarea class="form-control" id="summary" name="summary" rows="2">{{ article.summary if article else '' }}</textarea>
+                        <small class="text-muted">Brief description of the article.</small>
                     </div>
                     
                     <div class="mb-3">
                         <label for="content" class="form-label">Content (Markdown)</label>
-                        <textarea class="form-control" id="content" name="content" rows="15" required>{{ article.content if article else '' }}</textarea>
-                        <small class="text-muted">
-                            Use Markdown for formatting.<br>
-                            Headers: # Header 1, ## Header 2<br>
-                            Bold: **bold text**<br>
-                            Italic: *italic text*<br>
-                            Links: [link text](https://example.com)<br>
-                            Images: ![alt text](https://example.com/image.jpg)<br>
-                            Code: `code`
-                        </small>
+                        <textarea class="form-control" id="content" name="content" rows="10" required>{{ article.content if article else '' }}</textarea>
+                        <small class="text-muted">Use Markdown for formatting.</small>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Sidebar settings -->
+        <!-- Sidebar settings - Simplified -->
         <div class="col-lg-4">
             <!-- Publish settings -->
             <div class="card bg-dark border-secondary mb-4">
@@ -90,7 +82,7 @@
                 </div>
             </div>
             
-            <!-- Category -->
+            <!-- Category - Simplified -->
             <div class="card bg-dark border-secondary mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">Category</h5>
@@ -110,37 +102,22 @@
                 </div>
             </div>
             
-            <!-- Tags -->
+            <!-- Tags - Simplified -->
             <div class="card bg-dark border-secondary mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">Tags</h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label">Select Tags</label>
-                        <div class="overflow-auto" style="max-height: 200px;">
-                            {% for tag in tags %}
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="tags" value="{{ tag.id }}" 
-                                       id="tag{{ tag.id }}" 
-                                       {% if article and tag in article.tags %}checked{% endif %}>
-                                <label class="form-check-label" for="tag{{ tag.id }}">
-                                    {{ tag.name }}
-                                </label>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="new_tags" class="form-label">Add New Tags</label>
-                        <input type="text" class="form-control" id="new_tags" name="new_tags" placeholder="tag1, tag2, tag3">
-                        <small class="text-muted">Comma-separated list of new tags.</small>
+                        <label for="new_tags" class="form-label">Tags (comma-separated)</label>
+                        <input type="text" class="form-control" id="new_tags" name="new_tags" 
+                               placeholder="tag1, tag2, tag3"
+                               value="{% if article and article.tags %}{% for tag in article.tags %}{{ tag.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}">
                     </div>
                 </div>
             </div>
             
-            <!-- SEO settings - Simplified -->
+            <!-- SEO settings - Ultra Simplified -->
             <div class="card bg-dark border-secondary mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">SEO Settings</h5>
@@ -153,12 +130,7 @@
                     
                     <div class="mb-3">
                         <label for="meta_description" class="form-label">Meta Description</label>
-                        <textarea class="form-control" id="meta_description" name="meta_description" rows="2">{{ article.meta_description if article else '' }}</textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="meta_keywords" class="form-label">Meta Keywords</label>
-                        <input type="text" class="form-control" id="meta_keywords" name="meta_keywords" value="{{ article.meta_keywords if article else '' }}">
+                        <input type="text" class="form-control" id="meta_description" name="meta_description" value="{{ article.meta_description if article and article.meta_description else '' }}">
                     </div>
                 </div>
             </div>
