@@ -25,6 +25,7 @@
 
 <!-- Using a basic form without JavaScript-heavy components for improved stability -->
 <form method="post" class="article-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="row">
         <!-- Main content column -->
         <div class="col-lg-8">

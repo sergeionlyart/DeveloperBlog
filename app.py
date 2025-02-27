@@ -6,6 +6,7 @@ from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager
 from flask_misaka import Misaka
 from flask_caching import Cache
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash
 
 # Configure logging
@@ -25,6 +26,7 @@ db = SQLAlchemy(model_class=Base)
 md = Misaka(fenced_code=True, highlight=True, autolink=True, escape=True)
 cache = Cache()
 login_manager = LoginManager()
+csrf = CSRFProtect()
 
 # Create the app
 app = Flask(__name__)
@@ -48,6 +50,7 @@ md.init_app(app)
 cache.init_app(app)
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+csrf.init_app(app)  # Инициализация CSRF защиты
 
 # Import routes after app is created to avoid circular imports
 with app.app_context():
