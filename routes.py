@@ -19,6 +19,14 @@ from utils import generate_sitemap
 # Настраиваем расширенное логирование для отслеживания ошибок и производительности
 import time
 import traceback
+
+# Инициализируем логирование
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger('routes')
+import traceback
 import sys
 
 # Настройка логирования с форматированием для отслеживания времени и контекста
