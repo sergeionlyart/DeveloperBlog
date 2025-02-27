@@ -1,3 +1,15 @@
 User-agent: *
 Allow: /
-Sitemap: /sitemap.xml
+Disallow: /admin/
+Disallow: /login
+Disallow: /logout
+
+# Allow search crawlers to process these paths
+Allow: /blog/
+Allow: /category/
+Allow: /tag/
+Allow: /sitemap.xml
+Allow: /robots.txt
+
+# Sitemap location
+Sitemap: {{site_url}}/sitemap.xml

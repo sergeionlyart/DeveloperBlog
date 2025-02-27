@@ -26,6 +26,48 @@
     
     <meta property="article:published_time" content="{{ article.created_at.isoformat() }}">
     <meta property="article:modified_time" content="{{ article.updated_at.isoformat() }}">
+    
+    <!-- Canonical URL to prevent duplicate content issues -->
+    <link rel="canonical" href="{{ request.url_root.rstrip('/') }}{{ request.path }}" />
+    
+    <!-- JSON-LD structured data for Article -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "{{ article.title }}",
+      "description": "{{ article.meta_description or article.summary }}",
+      "image": "{{ request.url_root }}static/images/blog-default.jpg",
+      "author": {
+        "@type": "Person",
+        "name": "{{ article.author.username }}"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Developer Blog",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "{{ request.url_root }}static/images/logo.png"
+        }
+      },
+      "datePublished": "{{ article.created_at.isoformat() }}",
+      "dateModified": "{{ article.updated_at.isoformat() }}",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "{{ request.url }}"
+      },
+      {% if article.category %}
+      "about": {
+        "@type": "Thing",
+        "name": "{{ article.category.name }}"
+      },
+      {% endif %}
+      {% if article.tags %}
+      "keywords": "{% for tag in article.tags %}{{ tag.name }}{% if not loop.last %}, {% endif %}{% endfor %}",
+      {% endif %}
+      "articleSection": "{{ article.category.name if article.category else 'Technology' }}"
+    }
+    </script>
     {% endif %}
     
     <!-- Bootstrap CSS from Replit CDN -->

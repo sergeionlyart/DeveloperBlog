@@ -44,56 +44,119 @@ def extract_meta_keywords(content, max_keywords=10):
     return ', '.join(keywords)
 
 def generate_sitemap():
-    """Generate sitemap.xml file."""
+    """Generate sitemap.xml file with enhanced SEO metadata."""
     import logging
     
     try:
-        logging.info("Starting sitemap generation")
+        logging.info("Starting enhanced sitemap generation")
         with app.app_context():
-            # Use a hard-coded base URL since we're outside a request context
+            # Get the base URL from environment variables or default to localhost
             base_url = os.environ.get('SITE_URL', 'http://localhost:5000')
             base_url = base_url.rstrip('/')
             logging.info(f"Using base URL: {base_url} for sitemap")
             
+            # Create sitemap with enhanced schema support
             xml_content = '<?xml version="1.0" encoding="UTF-8"?>\n'
-            xml_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            xml_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n'
+            xml_content += '        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n'
+            xml_content += '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"\n'
+            xml_content += '        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"\n'
+            xml_content += '        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9\n'
+            xml_content += '        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">\n'
             
             # Add home page
-            xml_content += f'  <url>\n    <loc>{base_url}/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n'
+            now = datetime.utcnow().strftime('%Y-%m-%d')
+            xml_content += f'  <url>\n    <loc>{base_url}/</loc>\n    <lastmod>{now}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n'
             
-            # Add published articles
-            logging.info("Adding articles to sitemap")
+            # Add published articles with detailed metadata
+            logging.info("Adding articles to sitemap with enhanced metadata")
             articles = Article.query.filter_by(published=True).all()
             for article in articles:
                 updated = article.updated_at.strftime('%Y-%m-%d')
-                xml_content += f'  <url>\n    <loc>{base_url}/blog/{article.slug}</loc>\n    <lastmod>{updated}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n'
+                
+                # Skip articles with empty or placeholder slugs
+                if not article.slug or article.slug == '-':
+                    continue
+                    
+                xml_content += f'  <url>\n'
+                xml_content += f'    <loc>{base_url}/blog/{article.slug}</loc>\n'
+                xml_content += f'    <lastmod>{updated}</lastmod>\n'
+                xml_content += f'    <changefreq>weekly</changefreq>\n'
+                xml_content += f'    <priority>0.8</priority>\n'
+                
+                # Add news metadata for articles less than 2 days old
+                days_old = (datetime.utcnow() - article.created_at).days
+                if days_old < 2:
+                    publication_date = article.created_at.strftime('%Y-%m-%dT%H:%M:%SZ')
+                    xml_content += f'    <news:news>\n'
+                    xml_content += f'      <news:publication>\n'
+                    xml_content += f'        <news:name>Developer Blog</news:name>\n'
+                    xml_content += f'        <news:language>en</news:language>\n'
+                    xml_content += f'      </news:publication>\n'
+                    xml_content += f'      <news:publication_date>{publication_date}</news:publication_date>\n'
+                    xml_content += f'      <news:title>{article.title}</news:title>\n'
+                    xml_content += f'    </news:news>\n'
+                
+                xml_content += f'  </url>\n'
             
-            # Add categories
+            # Add categories with updated lastmod dates
             logging.info("Adding categories to sitemap")
             categories = Category.query.all()
             for category in categories:
-                xml_content += f'  <url>\n    <loc>{base_url}/category/{category.slug}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>\n  </url>\n'
+                # Find the most recent article in this category
+                latest_article = Article.query.filter_by(
+                    category_id=category.id, 
+                    published=True
+                ).order_by(Article.updated_at.desc()).first()
+                
+                lastmod = now
+                if latest_article:
+                    lastmod = latest_article.updated_at.strftime('%Y-%m-%d')
+                
+                xml_content += f'  <url>\n'
+                xml_content += f'    <loc>{base_url}/category/{category.slug}</loc>\n'
+                xml_content += f'    <lastmod>{lastmod}</lastmod>\n'
+                xml_content += f'    <changefreq>weekly</changefreq>\n'
+                xml_content += f'    <priority>0.6</priority>\n'
+                xml_content += f'  </url>\n'
             
-            # Add tags
+            # Add tags with updated lastmod dates
             logging.info("Adding tags to sitemap")
             tags = Tag.query.all()
             for tag in tags:
-                xml_content += f'  <url>\n    <loc>{base_url}/tag/{tag.slug}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.4</priority>\n  </url>\n'
+                # Find the most recent article with this tag
+                latest_article = Article.query.join(
+                    Article.tags
+                ).filter(
+                    Tag.id == tag.id,
+                    Article.published == True
+                ).order_by(Article.updated_at.desc()).first()
+                
+                lastmod = now
+                if latest_article:
+                    lastmod = latest_article.updated_at.strftime('%Y-%m-%d')
+                
+                xml_content += f'  <url>\n'
+                xml_content += f'    <loc>{base_url}/tag/{tag.slug}</loc>\n'
+                xml_content += f'    <lastmod>{lastmod}</lastmod>\n'
+                xml_content += f'    <changefreq>weekly</changefreq>\n'
+                xml_content += f'    <priority>0.4</priority>\n'
+                xml_content += f'  </url>\n'
             
             xml_content += '</urlset>'
             
             # Write to file
-            logging.info("Writing sitemap to file")
+            logging.info("Writing enhanced sitemap to file")
             with open('static/sitemap.xml', 'w') as f:
                 f.write(xml_content)
             
-            logging.info("Sitemap generation completed successfully")
+            logging.info("Enhanced sitemap generation completed successfully")
             return True
     except Exception as e:
         logging.error(f"Error generating sitemap: {str(e)}")
         # Create a basic sitemap to avoid errors
         basic_xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        basic_xml += '  <url>\n    <loc>http://localhost:5000/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n'
+        basic_xml += f'  <url>\n    <loc>{os.environ.get("SITE_URL", "http://localhost:5000")}/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n'
         basic_xml += '</urlset>'
         
         try:

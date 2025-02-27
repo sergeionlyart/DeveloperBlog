@@ -513,7 +513,16 @@ def sitemap_xml():
 
 @app.route('/robots.txt')
 def robots_txt():
-    response = make_response(open('static/robots.txt').read())
+    # Read robots.txt file
+    with open('static/robots.txt') as f:
+        content = f.read()
+    
+    # Replace placeholders with actual values
+    site_url = os.environ.get('SITE_URL', request.url_root.rstrip('/'))
+    content = content.replace('{{site_url}}', site_url)
+    
+    # Create response
+    response = make_response(content)
     response.headers["Content-Type"] = "text/plain"
     return response
 
