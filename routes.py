@@ -16,8 +16,40 @@ from app import app, db, cache
 from models import User, Category, Tag, Article
 from utils import generate_sitemap
 
-# Настраиваем логирование для отслеживания ошибок
-logging.basicConfig(level=logging.DEBUG)
+# Настраиваем расширенное логирование для отслеживания ошибок и производительности
+import time
+import traceback
+import sys
+
+# Настройка логирования с форматированием для отслеживания времени и контекста
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)s] [%(name)s:%(lineno)d] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    stream=sys.stdout
+)
+logger = logging.getLogger(__name__)
+
+# Создаем декоратор для отслеживания времени выполнения функций
+def log_execution_time(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        logger.debug(f"START: {func.__name__}")
+        start_time = time.time()
+        try:
+            result = func(*args, **kwargs)
+            end_time = time.time()
+            execution_time = end_time - start_time
+            logger.debug(f"END: {func.__name__} - Execution time: {execution_time:.2f} sec")
+            return result
+        except Exception as e:
+            end_time = time.time()
+            execution_time = end_time - start_time
+            logger.error(f"ERROR in {func.__name__} - Execution time: {execution_time:.2f} sec")
+            logger.error(f"Exception: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            raise
+    return wrapper
 
 # Custom decorator for admin-only routes
 def admin_required(f):
@@ -201,6 +233,7 @@ def admin_articles():
 @app.route('/admin/article/new', methods=['GET', 'POST'])
 @login_required
 @admin_required
+@log_execution_time
 def new_article():
     """Simplified article creation with better error handling and performance"""
     # Импортируем необходимые библиотеки для работы с формой
@@ -334,6 +367,7 @@ def new_article():
 @app.route('/admin/article/edit/<int:article_id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
+@log_execution_time
 def edit_article(article_id):
     """Simplified article editing with better error handling and performance"""
     # Импортируем необходимые библиотеки для работы с формой
@@ -461,6 +495,7 @@ def edit_article(article_id):
 @app.route('/admin/article/delete/<int:article_id>', methods=['POST'])
 @login_required
 @admin_required
+@log_execution_time
 def delete_article(article_id):
     article = Article.query.get_or_404(article_id)
     try:
