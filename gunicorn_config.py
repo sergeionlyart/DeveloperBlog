@@ -21,6 +21,8 @@ ignore_winch = True  # Игнорировать сигнал WINCH полнос�
 forwarded_allow_ips = '*'  # Доверять всем заголовкам X-Forwarded-*
 reuse_port = True  # Улучшает поведение при перезапуске
 worker_tmp_dir = '/dev/shm'  # Использовать tmpfs для временных файлов, повышает производительность
+disable_winch_logs = True  # Отключить логирование событий SIGWINCH
+log_winch = False  # Дополнительный флаг отключения логирования SIGWINCH
 
 # Основные оптимизации производительности
 max_requests = 1000  # Перезапускать воркеры после обработки 1000 запросов
@@ -28,12 +30,61 @@ max_requests_jitter = 200  # Добавить случайность для пр
 graceful_timeout = 30  # Время ожидания до принудительного завершения
 keepalive = 5  # Сохранять соединение в течение 5 секунд после запроса
 
+# Кастомный класс логгера для подавления WINCH сообщений
+class CustomLogger:
+    def setup(self, cfg):
+        from gunicorn import glogging
+        import logging
+        
+        self._logger = glogging.Logger(cfg)
+        self._logger.setup(cfg)
+        
+        # Получаем оригинальный обработчик
+        self.error_handlers = self._logger.error_handlers
+        
+        # Создаем фильтр для WINCH
+        class WinchFilter(logging.Filter):
+            def filter(self, record):
+                return 'Handling signal: winch' not in record.getMessage()
+                
+        # Добавляем фильтр ко всем обработчикам логов
+        for handler in self.error_handlers:
+            handler.addFilter(WinchFilter())
+    
+    # Проксируем все методы к внутреннему логгеру
+    def critical(self, msg, *args, **kwargs):
+        self._logger.critical(msg, *args, **kwargs)
+    
+    def error(self, msg, *args, **kwargs):
+        self._logger.error(msg, *args, **kwargs)
+    
+    def warning(self, msg, *args, **kwargs):
+        self._logger.warning(msg, *args, **kwargs)
+    
+    def info(self, msg, *args, **kwargs):
+        if 'winch' not in msg.lower():
+            self._logger.info(msg, *args, **kwargs)
+    
+    def debug(self, msg, *args, **kwargs):
+        if 'winch' not in msg.lower():
+            self._logger.debug(msg, *args, **kwargs)
+    
+    def exception(self, msg, *args, **kwargs):
+        self._logger.exception(msg, *args, **kwargs)
+    
+    def log(self, lvl, msg, *args, **kwargs):
+        if 'winch' not in msg.lower():
+            self._logger.log(lvl, msg, *args, **kwargs)
+    
+    def access(self, resp, req, environ, request_time):
+        self._logger.access(resp, req, environ, request_time)
+
 # Логирование с улучшенной гибкостью
 accesslog = "-"  # Выводить логи доступа в stdout
 errorlog = "-"   # Выводить логи ошибок в stdout
 loglevel = "info"
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(L)s'
-logger_class = 'gunicorn.glogging.Logger'
+logger_class = 'gunicorn_config.CustomLogger'
 
 # Отладочные возможности
 reload = True  # Перезагрузка при изменении файлов
