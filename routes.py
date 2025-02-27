@@ -162,7 +162,8 @@ def new_article():
             content = request.form.get('content')
             category_id = request.form.get('category_id')
             tag_ids = request.form.getlist('tags')
-            published = 'published' in request.form
+            published = request.form.get('published') == 'on'
+            logging.info(f"Published status: {published}, Form value: {request.form.get('published')}")
             summary = request.form.get('summary', '')
             
             logging.info(f"Article data received - Title: {title}, Category ID: {category_id}")
@@ -253,7 +254,8 @@ def edit_article(article_id):
         article.title = request.form.get('title')
         article.content = request.form.get('content')
         article.category_id = request.form.get('category_id') or None
-        article.published = 'published' in request.form
+        article.published = request.form.get('published') == 'on'
+        logging.info(f"Edit published status: {article.published}, Form value: {request.form.get('published')}")
         article.summary = request.form.get('summary', '')
         
         # Update slug if explicitly provided
@@ -455,6 +457,17 @@ def robots_txt():
     response = make_response(open('static/robots.txt').read())
     response.headers["Content-Type"] = "text/plain"
     return response
+
+# Cache control
+@app.route('/admin/clear-cache')
+@login_required
+@admin_required
+def clear_cache():
+    import logging
+    logging.info("Clearing cache...")
+    cache.clear()
+    flash('Cache cleared successfully!', 'success')
+    return redirect(request.referrer or url_for('admin_dashboard'))
 
 # Error handlers
 @app.errorhandler(404)
