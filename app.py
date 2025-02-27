@@ -6,9 +6,15 @@ from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager
 from flask_misaka import Misaka
 from flask_caching import Cache
+from werkzeug.security import generate_password_hash
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+
+# Настройка статичных данных администратора
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "adminpassword"  # В реальном приложении используйте более сложный пароль
+ADMIN_EMAIL = "admin@example.com"
 
 # Set up base class for SQLAlchemy models
 class Base(DeclarativeBase):
@@ -54,19 +60,18 @@ with app.app_context():
 
     # Initialize admin user if it doesn't exist
     from models import User
-    from werkzeug.security import generate_password_hash
     
-    admin = User.query.filter_by(username="admin").first()
+    admin = User.query.filter_by(username=ADMIN_USERNAME).first()
     if not admin:
         admin_user = User(
-            username="admin",
-            email="admin@example.com",
-            password_hash=generate_password_hash("admin"),
+            username=ADMIN_USERNAME,
+            email=ADMIN_EMAIL,
+            password_hash=generate_password_hash(ADMIN_PASSWORD),
             is_admin=True
         )
         db.session.add(admin_user)
         db.session.commit()
-        logging.info("Admin user created")
+        logging.info(f"Admin user '{ADMIN_USERNAME}' created with stated password")
 
 @login_manager.user_loader
 def load_user(user_id):

@@ -89,6 +89,8 @@ def search():
 # Admin routes
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    from app import ADMIN_USERNAME, ADMIN_PASSWORD
+    
     if current_user.is_authenticated:
         return redirect(url_for('admin_dashboard'))
     
@@ -96,8 +98,16 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password_hash, password):
+        # Проверяем с использованием статических учетных данных
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            # Если совпадает, используем существующую базу данных для получения объекта пользователя
+            user = User.query.filter_by(username=username).first()
+            
+            # Если пользователя нет в БД (что странно, но возможно), обработаем это
+            if not user:
+                flash('Database error: Admin user not found.', 'danger')
+                return render_template('admin/login.html', title="Login")
+                
             login_user(user)
             next_page = request.args.get('next')
             flash('Login successful!', 'success')
