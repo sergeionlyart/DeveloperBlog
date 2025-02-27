@@ -43,7 +43,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
     
-    <!-- If we're on the admin edit page, load SimpleMDE -->
+    <!-- Load SimpleMDE styles only on article edit pages -->
     {% if request.path.startswith('/admin/article') %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
     {% endif %}
@@ -194,10 +194,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     <script>hljs.highlightAll();</script>
     
-    <!-- If we're on admin edit page, load SimpleMDE -->
+    <!-- Load admin JS if we're on any admin page -->
+    {% if request.path.startswith('/admin') %}
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    
+    <!-- Add SimpleMDE only on article edit pages -->
     {% if request.path.startswith('/admin/article') %}
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
-    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    {% endif %}
     {% endif %}
 </body>
 </html>
