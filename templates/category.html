@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Category header -->
+        <div class="mb-4">
+            <h1><i class="fas fa-folder me-2"></i>{{ category.name }}</h1>
+            {% if category.description %}
+            <p class="lead">{{ category.description }}</p>
+            {% endif %}
+            <p class="text-muted">{{ articles.total }} article(s) in this category</p>
+        </div>
+        
+        <!-- Articles list -->
+        {% if articles.items %}
+            {% for article in articles.items %}
+            <div class="card mb-4 article-card bg-dark border-secondary">
+                <div class="card-body">
+                    <h2 class="card-title">
+                        <a href="{{ url_for('article', slug=article.slug) }}" class="text-decoration-none">{{ article.title }}</a>
+                    </h2>
+                    
+                    <div class="mb-2 text-muted">
+                        <small>
+                            <i class="far fa-calendar-alt me-1"></i> {{ article.created_at.strftime('%B %d, %Y') }}
+                        </small>
+                    </div>
+                    
+                    {% if article.summary %}
+                    <p class="card-text">{{ article.summary }}</p>
+                    {% else %}
+                    <p class="card-text">{{ article.content|striptags|truncate(200) }}</p>
+                    {% endif %}
+                    
+                    {% if article.tags %}
+                    <div class="mb-2">
+                        {% for tag in article.tags %}
+                        <a href="{{ url_for('tag', slug=tag.slug) }}" class="badge rounded-pill text-bg-secondary tag-badge text-decoration-none">
+                            <i class="fas fa-tag me-1"></i>{{ tag.name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('article', slug=article.slug) }}" class="btn btn-sm btn-primary">Read more</a>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            {% if articles.pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if articles.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('category', slug=category.slug, page=articles.prev_num) }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in articles.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == articles.page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('category', slug=category.slug, page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if articles.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('category', slug=category.slug, page=articles.next_num) }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+        {% else %}
+            <div class="alert alert-info">
+                No articles in this category yet. Check back soon!
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Other categories -->
+        {% set other_categories = Category.query.filter(Category.id != category.id).all() %}
+        {% if other_categories %}
+        <div class="card mb-4 bg-dark border-secondary">
+            <div class="card-header">Other Categories</div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    {% for other_category in other_categories %}
+                    <li class="mb-2">
+                        <a href="{{ url_for('category', slug=other_category.slug) }}" class="text-decoration-none">
+                            <i class="fas fa-folder me-1"></i>{{ other_category.name }}
+                            <span class="badge rounded-pill text-bg-secondary ms-1">
+                                {{ other_category.articles.filter_by(published=True).count() }}
+                            </span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Popular tags in this category -->
+        {% set used_tags = [] %}
+        {% for article in category.articles if article.published %}
+            {% for tag in article.tags %}
+                {% if tag not in used_tags %}
+                    {% if used_tags.append(tag) %}{% endif %}
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+        
+        {% if used_tags %}
+        <div class="card mb-4 bg-dark border-secondary">
+            <div class="card-header">Popular Tags</div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap">
+                    {% for tag in used_tags %}
+                    <a href="{{ url_for('tag', slug=tag.slug) }}" class="badge rounded-pill text-bg-secondary tag-badge m-1">
+                        <i class="fas fa-tag me-1"></i>{{ tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

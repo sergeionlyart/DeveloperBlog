@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <!-- Main content - Articles -->
+    <div class="col-lg-8">
+        <!-- Top intro section -->
+        {% if not search_query and request.path == '/' and not request.args.get('page') %}
+        <div class="p-4 mb-4 bg-dark rounded-3 border border-secondary">
+            <div class="container-fluid py-4">
+                <h1 class="display-5 fw-bold">Developer Blog</h1>
+                <p class="fs-5">
+                    Welcome to my personal developer blog where I share tutorials, code snippets, and insights about software development, web technologies, and programming best practices.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Search results header -->
+        {% if search_query %}
+        <div class="mb-4">
+            <h1>Search: "{{ search_query }}"</h1>
+            <p class="text-muted">Found {{ articles|default([])|count }} article(s) matching your query.</p>
+        </div>
+        {% endif %}
+        
+        <!-- Articles list -->
+        {% if articles.items|default([]) %}
+            {% for article in articles.items %}
+            <div class="card mb-4 article-card bg-dark border-secondary">
+                <div class="card-body">
+                    <h2 class="card-title"><a href="{{ url_for('article', slug=article.slug) }}" class="text-decoration-none">{{ article.title }}</a></h2>
+                    
+                    <div class="mb-2 text-muted">
+                        <small>
+                            <i class="far fa-calendar-alt me-1"></i> {{ article.created_at.strftime('%B %d, %Y') }}
+                            {% if article.category %}
+                            <span class="mx-2">|</span>
+                            <a href="{{ url_for('category', slug=article.category.slug) }}" class="text-decoration-none">
+                                <i class="fas fa-folder me-1"></i>{{ article.category.name }}
+                            </a>
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    {% if article.summary %}
+                    <p class="card-text">{{ article.summary }}</p>
+                    {% else %}
+                    <p class="card-text">{{ article.content|striptags|truncate(200) }}</p>
+                    {% endif %}
+                    
+                    {% if article.tags %}
+                    <div class="mb-2">
+                        {% for tag in article.tags %}
+                        <a href="{{ url_for('tag', slug=tag.slug) }}" class="badge rounded-pill text-bg-secondary tag-badge text-decoration-none">
+                            <i class="fas fa-tag me-1"></i>{{ tag.name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('article', slug=article.slug) }}" class="btn btn-sm btn-primary">Read more</a>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            {% if articles.pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if articles.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for(request.endpoint, page=articles.prev_num, **request.args) }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in articles.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == articles.page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for(request.endpoint, page=page_num, **request.args) }}">{{ page_num }}</a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if articles.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for(request.endpoint, page=articles.next_num, **request.args) }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+        {% else %}
+            <div class="alert alert-info">
+                {% if search_query %}
+                    No articles found matching "{{ search_query }}". Try a different search term.
+                {% else %}
+                    No articles published yet. Check back soon!
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- About card -->
+        <div class="card mb-4 bg-dark border-secondary">
+            <div class="card-header">About</div>
+            <div class="card-body">
+                <p>Welcome to my developer blog where I share my experience, tutorials, and insights about software development.</p>
+                <p class="mb-0">Feel free to explore articles by category or use the search function to find specific topics.</p>
+            </div>
+        </div>
+        
+        <!-- Categories widget -->
+        {% if categories|default([])|length > 0 %}
+        <div class="card mb-4 bg-dark border-secondary">
+            <div class="card-header">Categories</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <ul class="list-unstyled mb-0">
+                            {% for category in categories %}
+                            <li class="mb-2">
+                                <a href="{{ url_for('category', slug=category.slug) }}" class="text-decoration-none">
+                                    <i class="fas fa-folder me-1"></i>{{ category.name }}
+                                    <span class="badge rounded-pill text-bg-secondary ms-1">
+                                        {{ category.articles.filter_by(published=True).count() }}
+                                    </span>
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

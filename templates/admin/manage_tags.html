@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-tags me-2"></i>Manage Tags</h1>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Tags list -->
+    <div class="col-md-8">
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Tags</h5>
+            </div>
+            <div class="card-body">
+                {% if tags %}
+                <div class="table-responsive">
+                    <table class="table table-dark">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Articles</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tag in tags %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('tag', slug=tag.slug) }}" class="text-decoration-none">
+                                        {{ tag.name }}
+                                    </a>
+                                </td>
+                                <td>{{ tag.articles.count() }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-tag-btn" 
+                                            data-bs-toggle="modal" data-bs-target="#editTagModal"
+                                            data-tag-id="{{ tag.id }}" 
+                                            data-tag-name="{{ tag.name }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    
+                                    <form method="post" action="{{ url_for('manage_tags') }}" class="d-inline">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="tag_id" value="{{ tag.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger delete-confirm">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Tag cloud visualization -->
+                <div class="mt-4 p-3 bg-dark border border-secondary rounded">
+                    <h6 class="mb-3">Tag Cloud</h6>
+                    <div class="d-flex flex-wrap">
+                        {% for tag in tags %}
+                        <a href="{{ url_for('tag', slug=tag.slug) }}" 
+                           class="badge rounded-pill text-bg-secondary tag-badge m-1"
+                           style="font-size: {{ (0.8 + (tag.articles.count() * 0.1))|round(1, 'ceil') }}rem;">
+                            {{ tag.name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted">No tags yet. Create your first tag!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create new tag -->
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Create New Tag</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('manage_tags') }}" class="needs-validation" novalidate>
+                    <input type="hidden" name="action" value="create">
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                        <div class="invalid-feedback">Tag name is required.</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Create Tag
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Tag tips -->
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li class="mb-2">Use tags to categorize articles by specific topics</li>
+                    <li class="mb-2">Keep tags short and descriptive</li>
+                    <li class="mb-2">Use consistent naming conventions</li>
+                    <li>Tags improve article discoverability and SEO</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Tag Modal -->
+<div class="modal fade" id="editTagModal" tabindex="-1" aria-labelledby="editTagModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTagModalLabel">Edit Tag</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{{ url_for('manage_tags') }}" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="tag_id" id="edit-tag-id">
+                    
+                    <div class="mb-3">
+                        <label for="edit-tag-name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="edit-tag-name" name="name" required>
+                        <div class="invalid-feedback">Tag name is required.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

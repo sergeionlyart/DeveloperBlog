@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Tag header -->
+        <div class="mb-4">
+            <h1><i class="fas fa-tag me-2"></i>{{ tag.name }}</h1>
+            <p class="text-muted">{{ articles.total }} article(s) with this tag</p>
+        </div>
+        
+        <!-- Articles list -->
+        {% if articles.items %}
+            {% for article in articles.items %}
+            <div class="card mb-4 article-card bg-dark border-secondary">
+                <div class="card-body">
+                    <h2 class="card-title">
+                        <a href="{{ url_for('article', slug=article.slug) }}" class="text-decoration-none">{{ article.title }}</a>
+                    </h2>
+                    
+                    <div class="mb-2 text-muted">
+                        <small>
+                            <i class="far fa-calendar-alt me-1"></i> {{ article.created_at.strftime('%B %d, %Y') }}
+                            {% if article.category %}
+                            <span class="mx-2">|</span>
+                            <a href="{{ url_for('category', slug=article.category.slug) }}" class="text-decoration-none">
+                                <i class="fas fa-folder me-1"></i>{{ article.category.name }}
+                            </a>
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    {% if article.summary %}
+                    <p class="card-text">{{ article.summary }}</p>
+                    {% else %}
+                    <p class="card-text">{{ article.content|striptags|truncate(200) }}</p>
+                    {% endif %}
+                    
+                    {% if article.tags|length > 1 %}
+                    <div class="mb-2">
+                        {% for article_tag in article.tags %}
+                            {% if article_tag.id != tag.id %}
+                            <a href="{{ url_for('tag', slug=article_tag.slug) }}" class="badge rounded-pill text-bg-secondary tag-badge text-decoration-none">
+                                <i class="fas fa-tag me-1"></i>{{ article_tag.name }}
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('article', slug=article.slug) }}" class="btn btn-sm btn-primary">Read more</a>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            {% if articles.pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if articles.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('tag', slug=tag.slug, page=articles.prev_num) }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in articles.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == articles.page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('tag', slug=tag.slug, page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if articles.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('tag', slug=tag.slug, page=articles.next_num) }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+        {% else %}
+            <div class="alert alert-info">
+                No articles with this tag yet. Check back soon!
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Related tags -->
+        {% set related_tags = [] %}
+        {% for article in tag.articles if article.published %}
+            {% for article_tag in article.tags %}
+                {% if article_tag.id != tag.id and article_tag not in related_tags %}
+                    {% if related_tags.append(article_tag) %}{% endif %}
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+        
+        {% if related_tags %}
+        <div class="card mb-4 bg-dark border-secondary">
+            <div class="card-header">Related Tags</div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap">
+                    {% for related_tag in related_tags %}
+                    <a href="{{ url_for('tag', slug=related_tag.slug) }}" class="badge rounded-pill text-bg-secondary tag-badge m-1">
+                        <i class="fas fa-tag me-1"></i>{{ related_tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Categories that contain this tag -->
+        {% set categories = [] %}
+        {% for article in tag.articles if article.published and article.category %}
+            {% if article.category not in categories %}
+                {% if categories.append(article.category) %}{% endif %}
+            {% endif %}
+        {% endfor %}
+        
+        {% if categories %}
+        <div class="card mb-4 bg-dark border-secondary">
+            <div class="card-header">Categories</div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    {% for category in categories %}
+                    <li class="mb-2">
+                        <a href="{{ url_for('category', slug=category.slug) }}" class="text-decoration-none">
+                            <i class="fas fa-folder me-1"></i>{{ category.name }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

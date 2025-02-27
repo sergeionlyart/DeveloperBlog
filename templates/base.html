@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Dynamic meta tags for SEO -->
+    <title>{% if title %}{{ title }} | Developer Blog{% else %}Developer Blog{% endif %}</title>
+    <meta name="description" content="{% if description %}{{ description }}{% else %}A minimalist developer blog with tutorials, code snippets, and tech insights.{% endif %}">
+    
+    {% if article %}
+    <!-- Open Graph meta tags for social media -->
+    <meta property="og:title" content="{{ article.meta_title or article.title }}">
+    <meta property="og:description" content="{{ article.meta_description or article.summary }}">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="{{ request.url }}">
+    
+    <!-- Twitter Card meta tags -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ article.meta_title or article.title }}">
+    <meta name="twitter:description" content="{{ article.meta_description or article.summary }}">
+    
+    {% if article.meta_keywords %}
+    <meta name="keywords" content="{{ article.meta_keywords }}">
+    {% endif %}
+    
+    <meta property="article:published_time" content="{{ article.created_at.isoformat() }}">
+    <meta property="article:modified_time" content="{{ article.updated_at.isoformat() }}">
+    {% endif %}
+    
+    <!-- Bootstrap CSS from Replit CDN -->
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    
+    <!-- Highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    
+    <!-- Font Awesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    
+    <!-- If we're on the admin edit page, load SimpleMDE -->
+    {% if request.path.startswith('/admin/article') %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    {% endif %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-code me-2"></i>Developer Blog
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{{ url_for('index') }}">Home</a>
+                    </li>
+                    
+                    <!-- Category dropdown -->
+                    {% if categories|default([])|length > 0 %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdown" role="button" 
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            Categories
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="categoriesDropdown">
+                            {% for category in categories %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('category', slug=category.slug) }}">
+                                    {{ category.name }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <!-- Search form -->
+                <form class="d-flex" action="{{ url_for('search') }}" method="get">
+                    <input class="form-control me-2" type="search" name="q" placeholder="Search" 
+                           aria-label="Search" value="{{ search_query|default('') }}">
+                    <button class="btn btn-outline-light" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+                
+                <!-- Admin links if logged in -->
+                {% if current_user.is_authenticated %}
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('new_article') }}">
+                                    <i class="fas fa-plus-circle me-2"></i>New Article
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container mt-3">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Main content -->
+    <main class="container py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-code me-2"></i>Developer Blog</h5>
+                    <p class="text-muted">A minimalist blog for developers and tech enthusiasts.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('index') }}" class="text-decoration-none">Home</a></li>
+                        {% if not current_user.is_authenticated %}
+                        <li><a href="{{ url_for('login') }}" class="text-decoration-none">Login</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Follow</h5>
+                    <div class="d-flex">
+                        <a href="#" class="text-decoration-none me-3">
+                            <i class="fab fa-github fa-2x"></i>
+                        </a>
+                        <a href="#" class="text-decoration-none me-3">
+                            <i class="fab fa-twitter fa-2x"></i>
+                        </a>
+                        <a href="#" class="text-decoration-none">
+                            <i class="fas fa-rss fa-2x"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <hr>
+                    <p class="text-center text-muted">© 2025 Developer Blog. Built with Flask.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Highlight.js for code highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    
+    <!-- If we're on admin edit page, load SimpleMDE -->
+    {% if request.path.startswith('/admin/article') %}
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    {% endif %}
+</body>
+</html>
