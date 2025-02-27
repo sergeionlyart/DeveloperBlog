@@ -1,26 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   <url>
     <loc>http://localhost:5000/</loc>
+    <lastmod>2025-02-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>http://localhost:5000/blog/-</loc>
-    <lastmod>2025-02-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://localhost:5000/blog/ai-nvidia</loc>
     <lastmod>2025-02-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>Developer Blog</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2025-02-27T20:56:15Z</news:publication_date>
+      <news:title>AI-революция, новые законы масштабирования и угроза монополии: философский взгляд на Nvidia</news:title>
+    </news:news>
   </url>
   <url>
     <loc>http://localhost:5000/blog/-deepseek</loc>
     <lastmod>2025-02-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>Developer Blog</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2025-02-27T21:33:59Z</news:publication_date>
+      <news:title>Итак, что же анонсировала DeepSeek?</news:title>
+    </news:news>
+  </url>
+  <url>
+    <loc>http://localhost:5000/blog/-openai-devday</loc>
+    <lastmod>2025-02-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>Developer Blog</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2025-02-27T22:54:46Z</news:publication_date>
+      <news:title>Это был мой любимый демо-проект с октябрьского OpenAI DevDay:</news:title>
+    </news:news>
   </url>
 </urlset>
