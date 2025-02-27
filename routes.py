@@ -36,9 +36,17 @@ def index():
 @cache.cached(timeout=60)
 def article(slug):
     article = Article.query.filter_by(slug=slug, published=True).first_or_404()
+    
+    # Create breadcrumbs
+    breadcrumbs = [('Home', url_for('index'))]
+    if article.category:
+        breadcrumbs.append((article.category.name, url_for('category', slug=article.category.slug)))
+    breadcrumbs.append((article.title, ''))
+    
     return render_template('article.html', 
                           article=article,
                           Article=Article,
+                          breadcrumbs=breadcrumbs,
                           title=article.meta_title or article.title,
                           description=article.meta_description or article.summary)
 
@@ -48,10 +56,16 @@ def category(slug):
     category = Category.query.filter_by(slug=slug).first_or_404()
     page = request.args.get('page', 1, type=int)
     articles = Article.query.filter_by(category=category, published=True).order_by(desc(Article.created_at)).paginate(page=page, per_page=5)
+    
+    # Create breadcrumbs
+    breadcrumbs = [('Home', url_for('index')), (f"Category: {category.name}", '')]
+    
     return render_template('category.html', 
                           category=category, 
                           articles=articles,
-                          title=f"Category: {category.name}")
+                          breadcrumbs=breadcrumbs,
+                          title=f"Category: {category.name}",
+                          description=category.description or f"Articles in the {category.name} category.")
 
 @app.route('/tag/<slug>')
 @cache.cached(timeout=60)
@@ -59,10 +73,16 @@ def tag(slug):
     tag = Tag.query.filter_by(slug=slug).first_or_404()
     page = request.args.get('page', 1, type=int)
     articles = tag.articles.filter_by(published=True).order_by(desc(Article.created_at)).paginate(page=page, per_page=5)
+    
+    # Create breadcrumbs
+    breadcrumbs = [('Home', url_for('index')), (f"Tag: {tag.name}", '')]
+    
     return render_template('tag.html', 
                           tag=tag, 
                           articles=articles,
-                          title=f"Tag: {tag.name}")
+                          breadcrumbs=breadcrumbs,
+                          title=f"Tag: {tag.name}",
+                          description=f"Articles tagged with {tag.name}.")
 
 @app.route('/search')
 def search():
@@ -80,11 +100,16 @@ def search():
     
     categories = Category.query.all()
     
+    # Create breadcrumbs
+    breadcrumbs = [('Home', url_for('index')), (f"Search: {query}", '')]
+    
     return render_template('index.html', 
                           articles=articles,
                           categories=categories,
                           search_query=query,
-                          title=f"Search: {query}")
+                          breadcrumbs=breadcrumbs,
+                          title=f"Search: {query}",
+                          description=f"Search results for '{query}' - find relevant developer articles and tutorials.")
 
 # Admin routes
 @app.route('/login', methods=['GET', 'POST'])

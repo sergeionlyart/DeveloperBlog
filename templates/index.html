@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Breadcrumbs for search or pagination pages -->
+{% if search_query or request.args.get('page') %}
+{% include "partials/breadcrumbs.html" %}
+{% endif %}
+
 <div class="row">
     <!-- Main content - Articles -->
     <div class="col-lg-8">
