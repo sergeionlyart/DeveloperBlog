@@ -11,12 +11,18 @@
     <div class="col-lg-8">
         <!-- Top intro section -->
         {% if not search_query and request.path == '/' and not request.args.get('page') %}
-        <div class="p-4 mb-4 bg-dark rounded-3 border border-secondary">
+        <div class="p-4 mb-4 bg-dark rounded-3 border border-secondary" itemscope itemtype="https://schema.org/Blog">
             <div class="container-fluid py-4">
-                <h1 class="display-5 fw-bold">Developer Blog</h1>
-                <p class="fs-5">
+                <h1 class="display-5 fw-bold" itemprop="name headline">Developer Blog</h1>
+                <p class="fs-5" itemprop="description">
                     Welcome to my personal developer blog where I share tutorials, code snippets, and insights about software development, web technologies, and programming best practices.
                 </p>
+                <meta itemprop="url" content="{{ url_for('index', _external=True) }}">
+                <span itemprop="author" itemscope itemtype="https://schema.org/Person">
+                    <meta itemprop="name" content="Developer">
+                    <meta itemprop="jobTitle" content="Software Engineer">
+                </span>
+                <meta itemprop="keywords" content="programming, web development, software engineering, coding tutorials">
             </div>
         </div>
         {% endif %}
@@ -31,12 +37,17 @@
         
         <!-- Articles list -->
         {% if articles.items|default([]) %}
-            {% for article in articles.items %}
-            <article class="card mb-4 article-card bg-dark border-secondary" itemscope itemtype="https://schema.org/BlogPosting">
-                <div class="card-body">
-                    <h2 class="card-title">
-                        <a href="{{ url_for('article', slug=article.slug) }}" class="text-decoration-none" itemprop="headline url">{{ article.title }}</a>
-                    </h2>
+            <section itemscope itemtype="https://schema.org/ItemList">
+                <meta itemprop="name" content="Latest Blog Posts{% if search_query %} - Search Results for {{ search_query }}{% endif %}">
+                <meta itemprop="itemListOrder" content="https://schema.org/ItemListOrderDescending">
+                <meta itemprop="numberOfItems" content="{{ articles.items|length }}">
+                {% for article in articles.items %}
+                <article class="card mb-4 article-card bg-dark border-secondary" itemprop="itemListElement" itemscope itemtype="https://schema.org/BlogPosting">
+                    <meta itemprop="position" content="{{ loop.index }}">
+                    <div class="card-body">
+                        <h2 class="card-title">
+                            <a href="{{ url_for('article', slug=article.slug) }}" class="text-decoration-none" itemprop="headline url">{{ article.title }}</a>
+                        </h2>
                     
                     <div class="mb-2 text-muted">
                         <small>
@@ -128,7 +139,7 @@
                 </ul>
             </nav>
             {% endif %}
-            
+            </section>
         {% else %}
             <div class="alert alert-info">
                 {% if search_query %}
@@ -145,9 +156,14 @@
         <!-- About card -->
         <div class="card mb-4 bg-dark border-secondary">
             <div class="card-header">About</div>
-            <div class="card-body">
-                <p>Welcome to my developer blog where I share my experience, tutorials, and insights about software development.</p>
-                <p class="mb-0">Feel free to explore articles by category or use the search function to find specific topics.</p>
+            <div class="card-body" itemscope itemtype="https://schema.org/AboutPage">
+                <div itemprop="mainEntity" itemscope itemtype="https://schema.org/Person">
+                    <meta itemprop="name" content="Developer">
+                    <meta itemprop="jobTitle" content="Software Engineer">
+                    <meta itemprop="knowsAbout" content="Web Development, Software Architecture, Programming Languages">
+                    <p itemprop="description">Welcome to my developer blog where I share my experience, tutorials, and insights about software development.</p>
+                    <p class="mb-0">Feel free to explore articles by category or use the search function to find specific topics.</p>
+                </div>
             </div>
         </div>
         
@@ -158,16 +174,22 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-sm-12">
-                        <ul class="list-unstyled mb-0">
+                        <ul class="list-unstyled mb-0" itemscope itemtype="https://schema.org/ItemList">
+                            <meta itemprop="name" content="Blog Categories">
+                            <meta itemprop="itemListOrder" content="https://schema.org/ItemListUnordered">
+                            <meta itemprop="numberOfItems" content="{{ categories|length }}">
                             {% for category in categories %}
-                            <li class="mb-2" itemscope itemtype="https://schema.org/Category">
-                                <a href="{{ url_for('category', slug=category.slug) }}" class="text-decoration-none" itemprop="url">
-                                    <i class="fas fa-folder me-1"></i><span itemprop="name">{{ category.name }}</span>
-                                    <span class="badge rounded-pill text-bg-secondary ms-1" itemprop="articleCount">
-                                        {{ category.articles.filter_by(published=True).count() }}
-                                    </span>
-                                </a>
-                                <meta itemprop="description" content="{{ category.description or 'Articles in the ' + category.name + ' category' }}">
+                            <li class="mb-2" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                                <meta itemprop="position" content="{{ loop.index }}">
+                                <div itemprop="item" itemscope itemtype="https://schema.org/Category">
+                                    <a href="{{ url_for('category', slug=category.slug) }}" class="text-decoration-none" itemprop="url">
+                                        <i class="fas fa-folder me-1"></i><span itemprop="name">{{ category.name }}</span>
+                                        <span class="badge rounded-pill text-bg-secondary ms-1">
+                                            {{ category.articles.filter_by(published=True).count() }}
+                                        </span>
+                                    </a>
+                                    <meta itemprop="description" content="{{ category.description or 'Articles in the ' + category.name + ' category' }}">
+                                </div>
                             </li>
                             {% endfor %}
                         </ul>
