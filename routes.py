@@ -443,17 +443,7 @@ def manage_categories():
             if not name:
                 flash('Category name is required.', 'danger')
             else:
-                from slugify import slugify
-                slug = slugify(name)
-                
-                # Проверка на уникальность slug
-                base_slug = slug
-                counter = 1
-                while Category.query.filter_by(slug=slug).first():
-                    slug = f"{base_slug}-{counter}"
-                    counter += 1
-                
-                category = Category(name=name, slug=slug, description=description)
+                category = Category(name=name, description=description)
                 db.session.add(category)
                 try:
                     db.session.commit()
@@ -472,21 +462,8 @@ def manage_categories():
             category = Category.query.get_or_404(category_id)
             category.name = name
             category.description = description
-            
-            # Generate slug with uniqueness check
             from slugify import slugify
-            new_slug = slugify(name)
-            
-            # Ensure slug is unique (only if it's changing)
-            if new_slug != category.slug:
-                base_slug = new_slug
-                counter = 1
-                test_slug = new_slug
-                while Category.query.filter(Category.slug == test_slug, Category.id != category.id).first():
-                    test_slug = f"{base_slug}-{counter}"
-                    counter += 1
-                
-                category.slug = test_slug
+            category.slug = slugify(name)
             
             try:
                 db.session.commit()
@@ -531,17 +508,7 @@ def manage_tags():
             if not name:
                 flash('Tag name is required.', 'danger')
             else:
-                from slugify import slugify
-                slug = slugify(name)
-                
-                # Проверка на уникальность slug
-                base_slug = slug
-                counter = 1
-                while Tag.query.filter_by(slug=slug).first():
-                    slug = f"{base_slug}-{counter}"
-                    counter += 1
-                
-                tag = Tag(name=name, slug=slug)
+                tag = Tag(name=name)
                 db.session.add(tag)
                 try:
                     db.session.commit()
@@ -558,21 +525,8 @@ def manage_tags():
             
             tag = Tag.query.get_or_404(tag_id)
             tag.name = name
-            
-            # Generate slug with uniqueness check
             from slugify import slugify
-            new_slug = slugify(name)
-            
-            # Ensure slug is unique (only if it's changing)
-            if new_slug != tag.slug:
-                base_slug = new_slug
-                counter = 1
-                test_slug = new_slug
-                while Tag.query.filter(Tag.slug == test_slug, Tag.id != tag.id).first():
-                    test_slug = f"{base_slug}-{counter}"
-                    counter += 1
-                
-                tag.slug = test_slug
+            tag.slug = slugify(name)
             
             try:
                 db.session.commit()
