@@ -7,7 +7,7 @@
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   <url>
     <loc>http://localhost:5000/</loc>
-    <lastmod>2025-02-27</lastmod>
+    <lastmod>2025-02-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
@@ -51,6 +51,20 @@
       </news:publication>
       <news:publication_date>2025-02-27T22:54:46Z</news:publication_date>
       <news:title>Это был мой любимый демо-проект с октябрьского OpenAI DevDay:</news:title>
+    </news:news>
+  </url>
+  <url>
+    <loc>http://localhost:5000/blog/40</loc>
+    <lastmod>2025-02-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>Developer Blog</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2025-02-28T09:01:01Z</news:publication_date>
+      <news:title>Машиностроение Беларуси на пути к Индустрии 4.0: Риски, возможности и финансовая оценка</news:title>
     </news:news>
   </url>
 </urlset>
